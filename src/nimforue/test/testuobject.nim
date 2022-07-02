@@ -84,6 +84,7 @@ suite "NimForUE.UObject":
         let prop = cls.getFPropertyByName propName 
         var obj = newObjectFromClass(cls)
 
+
         let result = getPropertyValuePtr[FString](prop, obj)[]
 
         let expectedResult = FString("Hello World!")
@@ -397,7 +398,7 @@ suite "NimForUE.UObject":
 
     ueTest "Should be able to implement a fn in nim and bind in to an existing delegate in ue":
             let obj : UMyClassToTestPtr = newUObject[UMyClassToTest]()
-
+            obj.dynamicDelegateOneParamProperty.execute("sdasd")
 
             #Params needs to be retrieved from the function so they have to be set
             proc fnImpl(context:UObjectPtr, stack:var FFrame,  result: pointer):void {. cdecl .} =

@@ -49,5 +49,5 @@ const uePropType* = UEType(name: "UMyClassToTest", parent: "UObject", kind: uCla
 
 
 
-genType(ueVarType)
+genType(ueVarType) 
 genType(uePropType) #Notice we wont be using genType directly

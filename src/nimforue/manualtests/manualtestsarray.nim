@@ -1,10 +1,13 @@
 #this is temp until we have tests working (have to bind dyn delegates first)
 include ../unreal/prelude
-import std/[times,strformat, strutils, options, sugar, sequtils]
+import std/[times,strformat, strutils, options, sugar, sequtils, random]
 import ../uetypegen
 
-proc saySomething(obj:UObjectPtr, msg:FString) : void {.uebind.}
+when defined withNimScripter:
+    import nimscripter, nimscripter/[variables,vmops]
 
+
+proc saySomething(obj:UObjectPtr, msg:FString) : void {.uebind.}
 
 proc testArrays(obj:UObjectPtr) : TArray[FString] {.uebind.}
 
@@ -16,6 +19,7 @@ proc setColorByStringInMesh(obj:UObjectPtr, color:FString): void  {.uebind.}
 
 var returnString = ""
 
+
 proc printArray(obj:UObjectPtr, arr:TArray[FString]) =
     for str in arr: #add posibility to iterate over
         obj.saySomething(str) 
@@ -24,7 +28,7 @@ proc testArrayEntryPoint*(executor:UObjectPtr) =
     let msg = testMultipleParams(executor, "hola", 10)
 
     executor.saySomething(msg)
-    executor.setColorByStringInMesh("(R=1,G=1,B=1,A=1)")
+    executor.setColorByStringInMesh("(R=0,G=1,B=1,A=1)")
 
     if executor.boolTestFromNimAreEquals("5", 5, true) == true:
         executor.saySomething("true")
@@ -35,7 +39,8 @@ proc testArrayEntryPoint*(executor:UObjectPtr) =
     let number = arr.num()
 
 
-    # let str = $arr.num()
+
+    # let str = $arr.num(
 
 
     arr.add("hola")
@@ -73,14 +78,6 @@ proc testVectorEntryPoint*(executor:UObjectPtr) =
     executor.saySomething(v2.toString())
     # executor.saySomething(upVector.toString())
 
-
-#Figure out: Array [X]
-#Delegates
-#Multicast Delegates
-#Map
-
-
-
     
 
     # if "TEnumAsByte" in cppType: #Not sure if it would be better to just support it on the macro
@@ -104,15 +101,51 @@ proc testVectorEntryPoint*(executor:UObjectPtr) =
     #     return signatureAsStr
 
 
+var isScriptVMLoaded = false
+when defined withNimScripter:
+    var intr : Option[Interpreter]
+    proc funcInterop() = 
+        # if isScriptVMLoaded: return
+        isScriptVMLoaded = true
+        
+        addCallable(test3):
+            proc fancyStuff(a: int)
+            proc hello(a:string) # Has checks for the nimscript to ensure it's definition doesnt change to something unexpected.
+            proc byRefFn(a : var string)
+        const
+            addins = implNimscriptModule(test3)
+            script = NimScriptFile"""
+    proc fancyStuff*(a: int) = assert a in [10, 300]
+    proc hello*(a: string) = echo a
+    proc byRefFn*(a: var string) = 
+        a = "adios"
+
+    """ # Notice `fancyStuff` is exported
+        if intr.isNone():
+            intr = loadScript(script, addins) # This adds in out checks for the proc
+        intr.invoke(fancyStuff, 10) # Calls `fancyStuff(10)` in vm
+        intr.invoke(fancyStuff, 300) # Calls `fancyStuff(300)` in vm
+        intr.invoke(hello, "Hello") # Calls `hello("Hello")` in vm
+        var varRef = "hello cant believe this" & $rand(500)
+        intr.invoke(byRefFn, varRef) # Calls `ref(varRef)` in vm
+        UE_Log(varRef)
+        # echo $ build()
+
+
 
 proc scratchpad*(executor:UObjectPtr) = 
-    # UE_Log("here we test back")
-    let moduleName = FString("NimForUEBindings")
-    # let classes = getAllClassesFromModule(moduleName)
-    let ef = EFieldIterationFlags.None
+    # # UE_Log("here we test back")
+    # let moduleName = FString("Engine")
+    # # let classes = getAllClassesFromModule(moduleName)
+    # # for cls in classes:
+    # let cls = getClassByName("MyClassToTest")
+    # let ueType = cls.toUEType()
+    # #     # UE_Log("UEType" & $ueType)
+    # UE_Log("Class name" & cls.getName())
+    # UE_Log("Engine classes " & $len(classes))
+    discard
+    when defined withNimScripter:
+        funcInterop()
 
-    let cls = getClassByName("MyClassToTest")
-    let ueType = cls.toUEType()
-    UE_Log("UEType" & $ueType)
-
-
+    discard
+   

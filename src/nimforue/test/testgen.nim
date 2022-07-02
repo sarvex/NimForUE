@@ -5,8 +5,10 @@ import ../uetypegen
 import std/[sequtils, sugar]
 
 suite "NimForUE.TypesGen":
+    
     const MyClassToTestNProps = 16
     const MyClassToTestNFuncs = 6
+
     ueTest "Should generate all uprops for a given type":
         #tests that all props in the gen props, matches the manual binding
         let cls = getClassByName("MyClassToTest")
@@ -27,7 +29,7 @@ suite "NimForUE.TypesGen":
     ueTest "Should generate a class that matches the manual binding":
         let cls = getClassByName("MyClassToTest")
 
-        let ueClass = cls.toUEType()
+        let ueClass : UEType = cls.toUEType()
 
         assert ueClass.name == "UMyClassToTest"
         assert ueClass.parent == "UObject"

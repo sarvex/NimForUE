@@ -32,7 +32,7 @@ public:
 };
 
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FDynamicDelegateOneParamTest, FString, TestParam1);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FDynamicDelegateOneParamTest, FString, TestParam1); 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDynamicMulticastDelegateOneParamTest, FString, TestParam1);
 
 UCLASS()
@@ -87,6 +87,7 @@ public:
 	bool bWasCalled;
 	UFUNCTION()
 	void BindDelegateFuncToMultcasDynOneParam() {
+		
 		// MulticastDynamicDelegateOneParamProperty.AddDynamic(this, &UMyClassToTest::DelegateFunc);
 		TMulticastScriptDelegate<>* MulScrip = &MulticastDynamicDelegateOneParamProperty;
 		FScriptDelegate ScriptDel;

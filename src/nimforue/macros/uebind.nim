@@ -509,7 +509,7 @@ func genFunc(typeDef : UEType, funField : UEField) : NimNode =
     # debugEcho treeRepr result
 
 
-proc genUClassTypeDef(typeDef : UEType) : NimNode =
+proc genUClassTypeDef*(typeDef : UEType) : NimNode =
     let ptrName = ident typeDef.name & "Ptr"
     let parent = ident typeDef.parent
     let props = nnkStmtList.newTree(
@@ -529,8 +529,7 @@ proc genUClassTypeDef(typeDef : UEType) : NimNode =
                     ptrName* {.inject.} = ptr name
                 props
                 funcs
-    # debugEcho result.repr
-
+    debugEcho result.repr
 
 func genUStructTypeDef(typeDef: UEType) : NimNode =   
     let typeName = identWithInjectPublic typeDef.name
@@ -559,7 +558,9 @@ func genUEnumTypeDef(typeDef:UEType) : NimNode =
                     fields
     
     result[0][^1] = fields #replaces enum 
-    
+
+
+
         
 macro genType*(typeDef : static UEType) : untyped = 
     case typeDef.kind:
@@ -570,5 +571,10 @@ macro genType*(typeDef : static UEType) : untyped =
         of uEnum:
             genUEnumTypeDef(typeDef)
     
+        # repr result
 
 
+
+# 1. We are going to use it from a DSL 
+# 2. repr -> almost free 
+# 3. 

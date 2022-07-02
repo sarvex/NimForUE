@@ -18,6 +18,10 @@ switch("exceptions", "cpp") #need to investigate further how to get Unreal excep
 switch("define", "useMalloc")
 
 
+# switch("define", "withNimScripter")
+
+
+switch("path", "$nim")#nimscripter
 
 when not defined copylib:
     # switch("listcmd")

@@ -69,4 +69,4 @@ func toUEType*(cls:UClassPtr) : UEType =
     let name = cls.getPrefixCpp() & cls.getName()
     let parent = cls.getSuperClass()
     let parentName = parent.getPrefixCpp() & parent.getName()
-    UEType(name:name, kind:uClass, parent:parentName, fields:fields)
+    UEType(name:name, kind:uClass, parent:parentName, fields: @[])
