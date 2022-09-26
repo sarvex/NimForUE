@@ -142,7 +142,8 @@ let platformSwitches: Switches =
     else:
       @[]
 
-let ueincludes: Switches = getUEHeadersIncludePaths(config).map(headerPath => passC("-I" & quotes(headerPath)))
+# let ueincludes: Switches = getUEHeadersIncludePaths(config).map(headerPath => passC("-I" & quotes(headerPath)))
+let ueincludes: Switches = @[passC(&"\"@{getCurrentDir()}/.nimcache/engine.rsp\" "), passC(&"\"@{getCurrentDir()}/.nimcache/engine2.rsp\" ")]
 let uesymbols: Switches = getUESymbols(config).map(symbolPath => ("passL", quotes(symbolPath)))
 
 # --- End Compile flags
@@ -403,6 +404,35 @@ task rebuild, "Cleans and rebuilds the unreal plugin, host, guest and cpp bindin
   ubuild(taskOptions)
   gencppbindings(taskOptions)
   host(taskOptions)
+
+task listunrealmodules, "":
+  proc getModulesFor(sourceCategory:string): seq[string] = 
+    let path = 
+      if sourceCategory == "Intermediate": 
+        config.engineDir/"Intermediate" / "Build" / $config.targetPlatform / "UnrealEditor/Inc" 
+      else:
+        config.engineDir/"Source"/sourceCategory 
+ 
+    
+    walkDir(path)
+        .toSeq()
+        .filterIt(it[0] == pcDir)
+        .mapIt(it[1].split("\\")[^1])
+      
+ 
+
+
+  log($getModulesFor(taskOptions["category"]), lgWarning)
+
+task genresponsefile, "Generates a response file":
+  let headers = 
+    getUEHeadersIncludePaths(config)
+      .mapIt("/I " & "\"" & it & "\"" )
+      .join("\n")
+  
+  writeFile(".nimcache/engine.rsp", headers)
+
+
 
 # --- End Tasks ---
 

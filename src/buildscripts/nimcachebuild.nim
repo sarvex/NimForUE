@@ -164,7 +164,9 @@ proc compileCmd(cpppath: string, objpath: string, dbgFlags: string): string =
   "vccexe.exe" & " " &
     compileFlags.join(" ") & " " &
     (if withPCH and usesPCHFile(cppPath): pchFlags() else: "") & " " &
-    getUEHeadersIncludePaths(nueConfig).foldIncludes() & " " &
+    # getUEHeadersIncludePaths(nueConfig).foldIncludes() & " " &
+    &"\"@{getCurrentDir()}/.nimcache/engine.rsp\" " &
+    &"\"@{getCurrentDir()}/.nimcache/engine2.rsp\" " &
     "/Fo" & objpath & " " & cppPath &
     " " & dbgFlags
 
