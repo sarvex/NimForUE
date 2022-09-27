@@ -192,6 +192,7 @@ proc getMetaData*(field:UFieldPtr|FFieldPtr, key:FString) : FString =
 
 func getMetaDataMap*(field:FFieldPtr) : TMap[FName, FString] {.importcpp:"*(#->GetMetaDataMap())".}
 func getMetaDataMap*(field:UObjectPtr) : TMap[FName, FString] {.importcpp:"*(UMetaData::GetMapForObject(#))".}
+func getMetaDataMapPtr*(field:UObjectPtr) : ptr TMap[FName, FString] {.importcpp:"UMetaData::GetMapForObject(#)".}
 
 proc bindType*(field:UFieldPtr) : void {. importcpp:"#->Bind()" .} #notice bind is a reserverd keyword in nim
 proc getPrefixCpp*(str:UFieldPtr | UStructPtr) : FString {.importcpp:"FString(#->GetPrefixCPP())".}

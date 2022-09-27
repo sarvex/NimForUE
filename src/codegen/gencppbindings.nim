@@ -6,7 +6,6 @@ import ../nimforue/macros/uebind
 #import ../nimforue/unreal/bindings/exported/coreuobject
 import ../nimforue/unreal/bindings/exported/slate
 
-
 # proc fakeExportFColor(fcolor:FColor) {.exportcpp.} = discard
 
 #[

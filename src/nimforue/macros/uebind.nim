@@ -287,16 +287,16 @@ func genUClassTypeDef(typeDef : UEType, rule : UERule = uerNone, typeExposure: U
                     ptrName* {.inject.} = ptr name
         of uexExport:
             let moduleRelativePath = typeDef.metadata["ModuleRelativePath"].get("")
-            doAssert(moduleRelativePath != "")
+            assert(moduleRelativePath != "")
             let headerPath = newStrLitNode(moduleRelativePath)
             if rule == uerCodeGenOnlyFields: 
                 newEmptyNode()
-            else: genAst(name = ident typeDef.name, ptrName, parent, headerPath):
+            else: genAst(name = ident typeDef.name, ptrName, ptrImport = newStrLitNode(typeDef.name & "*"), parent, headerPath):
                 type
                     name* {.importcpp, header: headerPath.} = object of parent #TODO OF BASE CLASS 
-                    ptrName* = ptr name
+                    ptrName* {.importcpp: ptrImport, header: headerPath.} = ptr name
         else:
-            doAssert(false, "uexImport not valid")
+            assert(false, "uexImport not valid")
             newEmptyNode()
 
     result = 
@@ -320,17 +320,19 @@ func genUStructTypeDef(typeDef: UEType,  rule : UERule = uerNone, typeExposure:U
         case typeExposure: 
         of uexDsl: identWithInjectPublic typeDef.name
         of uexImport: 
+            let moduleRelativePath = typeDef.metadata["ModuleRelativePath"].get("")
+            assert(moduleRelativePath != "")
             nnkPragmaExpr.newTree([
                 nnkPostfix.newTree([ident "*", ident typeDef.name]),
                 nnkPragma.newTree(
                     ident "inject",
                     ident "importcpp",
-                    nnkExprColonExpr.newTree(ident "header", newStrLitNode("UEGenBindings.h"))
+                    nnkExprColonExpr.newTree(ident "header", newStrLitNode(moduleRelativePath))
                 )
             ])
         of uexExport:
             let moduleRelativePath = typeDef.metadata["ModuleRelativePath"].get("")
-            doAssert(moduleRelativePath != "")
+            assert(moduleRelativePath != "")
             nnkPragmaExpr.newTree([
                 nnkPostfix.newTree([ident "*", ident typeDef.name]),
                 nnkPragma.newTree(
@@ -493,11 +495,16 @@ func genUClassImportCTypeDef(typeDef : UEType, rule : UERule = uerNone) : NimNod
                        .filter(prop=>prop.kind==uefFunction)
                        .map(fun=>genImportCFunc(typeDef, fun)))
     
-    let typeDecl = if rule == uerCodeGenOnlyFields: newEmptyNode()
-                   else: genAst(name = ident typeDef.name, ptrName, parent, props, funcs):
-                    type  #notice the header is temp.
-                        name* {.inject, importcpp, header:"UEGenBindings.h" .} = object of parent #TODO OF BASE CLASS 
-                        ptrName* {.inject.} = ptr name
+    let typeDecl = 
+        if rule == uerCodeGenOnlyFields: 
+            newEmptyNode()
+        else: 
+            let moduleRelativePath = typeDef.metadata["ModuleRelativePath"].get("")
+            assert(moduleRelativePath != "")
+            genAst(name = ident typeDef.name, ptrName, parent, headerPath = newStrLitNode(moduleRelativePath)):
+                type  #notice the header is temp.
+                    name* {.importcpp, header:headerPath.} = object of parent #TODO OF BASE CLASS 
+                    ptrName* = ptr name
     
     result = 
         genAst(typeDecl, parent, props, funcs):

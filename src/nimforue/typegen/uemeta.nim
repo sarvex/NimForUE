@@ -215,10 +215,12 @@ func getFirstBpExposedParent(parent:UClassPtr) : UClassPtr =
         getFirstBpExposedParent(parent.getSuperClass())
 
 func getUETypeMetadata(uptr: UObjectPtr): seq[UEMetadata] =
-    let uemetadata = uptr.getMetaDataMap()
-    for key in uemetadata.keys():
-        let val = uemetadata[key]
-        result.add(makeUEMetadata($key, $val))
+    let uemetadataptr = uptr.getMetaDataMapPtr()
+    if uemetadataptr != nil:
+        let uemetadata = uemetadataptr[]
+        for key in uemetadata.keys():
+            let val = uemetadata[key]
+            result.add(makeUEMetadata($key, $val))
 
 func toUEType*(cls:UClassPtr, rules: seq[UEImportRule] = @[]) : Option[UEType] =
     #First it tries to see if it is a UNimClassBase and if it has a UEType stored.
@@ -243,8 +245,7 @@ func toUEType*(cls:UClassPtr, rules: seq[UEImportRule] = @[]) : Option[UEType] =
                         .map(p=>p.getPrefixCpp() & p.getName()).get("")
 
     if cls.isBpExposed() or uerImportBlueprintOnly notin rules:
-        #some UEType(name:name, kind:uetClass, parent:parentName, fields:fields.reversed(), metadata:cls.getUETypeMetadata())
-        some UEType(name:name, kind:uetClass, parent:parentName, fields:fields.reversed(), metadata: @[makeUEMetadata("ModuleRelativePath", "module rel path")])
+        some UEType(name:name, kind:uetClass, parent:parentName, fields:fields.reversed(), metadata: cls.getUETypeMetadata())
     else:
         # UE_Warn &"Class {name} is not exposed to BP"
         none(UEType)
