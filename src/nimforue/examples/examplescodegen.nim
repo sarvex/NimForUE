@@ -30,7 +30,7 @@ proc genBindings(moduleName:string, moduleRules:seq[UEImportRule]) =
     let nueCmd = config.pluginDir/"nue.exe codegen --module:\"" & codegenPath & "\""
     let result = execProcess(nueCmd, workingDir = config.pluginDir)
     # removeFile(codegenPath)
-    # UE_Log &"The result is {result} "
+    UE_Log &"The result is {result} "
     UE_Log &"-= Bindings for {moduleName} generated in {exportBindingsPath} =- "
 
     doAssert(fileExists(exportBindingsPath))
@@ -42,9 +42,8 @@ proc genBindings(moduleName:string, moduleRules:seq[UEImportRule]) =
     UE_Log &"Error: {e.getStackTrace()}"
     UE_Log &"Failed to generate {codegenPath} nim binding"
 
-
 #TODO dont regenerate already generated deps for this pass
-proc genBindingsWithDeps(moduleName:string, moduleRules:seq[UEImportRule]) =
+proc genBindingsWithDeps(moduleName:string, moduleRules:seq[UEImportRule], skipRoot = false) =
   var module = tryGetPackageByName(moduleName)
                 .flatmap((pkg:UPackagePtr) => pkg.toUEModule(moduleRules, excludeDeps= @["CoreUObject"]))
                 .get()
@@ -53,7 +52,8 @@ proc genBindingsWithDeps(moduleName:string, moduleRules:seq[UEImportRule]) =
     for dep in module.dependencies:
       genBindingsWithDeps(dep, moduleRules)
   
-  genBindings(moduleName, moduleRules)
+  if not skipRoot:
+    genBindings(moduleName, moduleRules)
 
 
 
@@ -66,11 +66,14 @@ uClass AActorCodegen of AActor:
       let ueType = str.toUEType(@[makeImportedRuleModule(uerImportBlueprintOnly)])
 
       # UE_Log &"UEType: {ueType}"
-      # let metadata = str.getMetaDataMap()
-      # let includePath = str.getMetaData("ModuleRelativePath")
+      let metadata = str.getMetaDataMap()
+      let moduleRelativePath = str.getMetaData("ModuleRelativePath")
+      let includePath = str.getMetaData("IncludePath")
       # UE_Log $cls.classFlags
-      # UE_Log $includePath
-      # UE_Log $metadata
+      UE_Log $metadata
+      UE_Log "ModuleRelativePath: " & $moduleRelativePath
+      UE_Log "IncludePath: " & $includePath
+
 
     proc printModuleIncludes() = 
       var module = tryGetPackageByName("Engine")
@@ -148,7 +151,7 @@ uClass AActorCodegen of AActor:
      
 
       # genBindings("Chaos", moduleRules)
-      genBindingsWithDeps("Engine", moduleRules)
+      genBindingsWithDeps("Engine", moduleRules, skipRoot = true)
       genBindings("Engine", moduleRules & @[makeImportedRuleModule(uerImportBlueprintOnly)])
 
       #Engine can be splited in two modules one is BP based and the other dont

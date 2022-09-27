@@ -214,6 +214,12 @@ func getFirstBpExposedParent(parent:UClassPtr) : UClassPtr =
     else:
         getFirstBpExposedParent(parent.getSuperClass())
 
+func getUETypeMetadata(uptr: UObjectPtr): seq[UEMetadata] =
+    let uemetadata = uptr.getMetaDataMap()
+    for key in uemetadata.keys():
+        let val = uemetadata[key]
+        result.add(makeUEMetadata($key, $val))
+
 func toUEType*(cls:UClassPtr, rules: seq[UEImportRule] = @[]) : Option[UEType] =
     #First it tries to see if it is a UNimClassBase and if it has a UEType stored.
     #Otherwise tries to parse the UEType from the Runtime information.
@@ -237,7 +243,8 @@ func toUEType*(cls:UClassPtr, rules: seq[UEImportRule] = @[]) : Option[UEType] =
                         .map(p=>p.getPrefixCpp() & p.getName()).get("")
 
     if cls.isBpExposed() or uerImportBlueprintOnly notin rules:
-        some UEType(name:name, kind:uetClass, parent:parentName, fields:fields.reversed())
+        #some UEType(name:name, kind:uetClass, parent:parentName, fields:fields.reversed(), metadata:cls.getUETypeMetadata())
+        some UEType(name:name, kind:uetClass, parent:parentName, fields:fields.reversed(), metadata: @[makeUEMetadata("ModuleRelativePath", "module rel path")])
     else:
         # UE_Warn &"Class {name} is not exposed to BP"
         none(UEType)
@@ -258,13 +265,12 @@ func toUEType*(str:UStructPtr, rules: seq[UEImportRule] = @[]) : Option[UEType] 
                     .map(x=>toUEField(x, str, rules))
                     .sequence()
 
-    let metadata = str.getMetaDataMap()
+    #[let metadata = str.getMetaDataMap()
         .toTable()
         .pairs
         .toSeq()
         .mapIt(makeUEMetadata($it[0], it[1]))
-
-    
+    ]#
 
     for rule in rules:
         if name in rule.affectedTypes and rule.rule == uerIgnore:
@@ -273,7 +279,7 @@ func toUEType*(str:UStructPtr, rules: seq[UEImportRule] = @[]) : Option[UEType] 
     # let parent = str.getSuperClass()
     # let parentName = parent.getPrefixCpp() & parent.getName()
     if str.isBpExposed() or uerImportBlueprintOnly notin rules:
-        some UEType(name:name, kind:uetStruct, fields:fields.reversed(), metadata:metadata)
+        some UEType(name:name, kind:uetStruct, fields:fields.reversed(), metadata:str.getUETypeMetadata())
     else:
         # UE_Warn &"Struct {name} is not exposed to BP"
         none(UEType)

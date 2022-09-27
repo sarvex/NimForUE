@@ -401,7 +401,7 @@ task rebuild, "Cleans and rebuilds the unreal plugin, host, guest and cpp bindin
       if attempts > 5:
         quit("Could not clean nimcache. Aborting.", QuitFailure)
   ubuild(taskOptions)
-  gencppbindings(taskOptions)
+  guestpch(taskOptions)
   host(taskOptions)
 
 # --- End Tasks ---

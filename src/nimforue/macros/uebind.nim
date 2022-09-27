@@ -264,7 +264,7 @@ func genFunc*(typeDef : UEType, funField : UEField) : NimNode =
 
 
 
-func genUClassTypeDef(typeDef : UEType, rule : UERule = uerNone) : NimNode =
+func genUClassTypeDef(typeDef : UEType, rule : UERule = uerNone, typeExposure: UEExposure) : NimNode =
     let ptrName = ident typeDef.name & "Ptr"
     let parent = ident typeDef.parent
     let props = nnkStmtList.newTree(
@@ -276,13 +276,29 @@ func genUClassTypeDef(typeDef : UEType, rule : UERule = uerNone) : NimNode =
                     typeDef.fields
                        .filter(prop=>prop.kind==uefFunction)
                        .map(fun=>genFunc(typeDef, fun)))
-    
-    let typeDecl = if rule == uerCodeGenOnlyFields: newEmptyNode()
-                   else: genAst(name = ident typeDef.name, ptrName, parent, props, funcs):
-                    type 
-                        name* {.inject, exportcpp.} = object of parent #TODO OF BASE CLASS 
-                        ptrName* {.inject.} = ptr name
-    
+    let typeDecl = 
+        case typeExposure:
+        of uexDsl:
+            if rule == uerCodeGenOnlyFields: 
+                newEmptyNode()
+            else: genAst(name = ident typeDef.name, ptrName, parent):
+                type 
+                    name* {.inject, exportcpp.} = object of parent #TODO OF BASE CLASS 
+                    ptrName* {.inject.} = ptr name
+        of uexExport:
+            let moduleRelativePath = typeDef.metadata["ModuleRelativePath"].get("")
+            doAssert(moduleRelativePath != "")
+            let headerPath = newStrLitNode(moduleRelativePath)
+            if rule == uerCodeGenOnlyFields: 
+                newEmptyNode()
+            else: genAst(name = ident typeDef.name, ptrName, parent, headerPath):
+                type
+                    name* {.importcpp, header: headerPath.} = object of parent #TODO OF BASE CLASS 
+                    ptrName* = ptr name
+        else:
+            doAssert(false, "uexImport not valid")
+            newEmptyNode()
+
     result = 
         genAst(typeDecl, parent, props, funcs):
                 typeDecl
@@ -300,7 +316,6 @@ func genUClassTypeDef(typeDef : UEType, rule : UERule = uerNone) : NimNode =
     #    debugEcho result.repr
 
 func genUStructTypeDef(typeDef: UEType,  rule : UERule = uerNone, typeExposure:UEExposure) : NimNode = 
-    let suffix = "_"
     let typeName = 
         case typeExposure: 
         of uexDsl: identWithInjectPublic typeDef.name
@@ -309,47 +324,49 @@ func genUStructTypeDef(typeDef: UEType,  rule : UERule = uerNone, typeExposure:U
                 nnkPostfix.newTree([ident "*", ident typeDef.name]),
                 nnkPragma.newTree(
                     ident "inject",
-                    nnkExprColonExpr.newTree(ident "importcpp", newStrLitNode("$1" & suffix)),
+                    ident "importcpp",
                     nnkExprColonExpr.newTree(ident "header", newStrLitNode("UEGenBindings.h"))
                 )
             ])
         of uexExport:
+            let moduleRelativePath = typeDef.metadata["ModuleRelativePath"].get("")
+            doAssert(moduleRelativePath != "")
             nnkPragmaExpr.newTree([
                 nnkPostfix.newTree([ident "*", ident typeDef.name]),
                 nnkPragma.newTree(
                     ident "inject",
-                    nnkExprColonExpr.newTree(ident "exportcpp", newStrLitNode("$1" & suffix))
+                    ident "importcpp",
+                    nnkExprColonExpr.newTree(ident "header", newStrLitNode(moduleRelativePath))
                 )
             ])
 
 
     func getFieldIdent(prop:UEField) : NimNode = 
         let fieldName = ueNameToNimName(toLower($prop.name[0])&prop.name.substr(1))
-        # case typeExposure:
-        # of uexImport, uexExport: 
-        #     nnkPragmaExpr.newTree(nnkPostfix.newTree(ident "*", ident fieldName),
-        #         nnkPragma.newTree(
-        #                 nnkExprColonExpr.newTree(
-        #                     ident "importcpp", 
-        #                     newStrLitNode(prop.name)))
-        #     )
-        # of uexDsl: 
-        #     identPublic fieldName
-        identPublic fieldName
+        case typeExposure:
+        of uexImport, uexExport: 
+            nnkPragmaExpr.newTree(nnkPostfix.newTree(ident "*", ident fieldName),
+                nnkPragma.newTree(
+                        nnkExprColonExpr.newTree(
+                            ident "importcpp", 
+                            newStrLitNode(prop.name)))
+            )
+        of uexDsl: 
+            identPublic fieldName
+        #identPublic fieldName
 
     #TODO Needs to handle TArray/Etc. like it does above with classes
     let fields = typeDef.fields
                         .map(prop => nnkIdentDefs.newTree(
                             [getFieldIdent(prop), 
                             prop.getTypeNodeFromUProp(), newEmptyNode()]))
-
                         .foldl(a.add b, nnkRecList.newTree)
-
 
     result = genAst(typeName, fields):
                 type typeName = object
-    
-    result[0][^1] = nnkObjectTy.newTree([newEmptyNode(), newEmptyNode(), fields])
+
+    if typeExposure != uexExport:
+        result[0][^1] = nnkObjectTy.newTree([newEmptyNode(), newEmptyNode(), fields])
 
     # if not importcpp: 
     #     #Generates a type so it's added to the header when using --header
@@ -505,7 +522,7 @@ proc genImportCTypeDecl*(typeDef : UEType, rule : UERule = uerNone) : NimNode =
 proc genTypeDecl*(typeDef : UEType, rule : UERule = uerNone, typeExposure = uexDsl) : NimNode = 
     case typeDef.kind:
         of uetClass:
-            genUClassTypeDef(typeDef, rule)
+            genUClassTypeDef(typeDef, rule, typeExposure)
         of uetStruct:
             genUStructTypeDef(typeDef, rule, typeExposure)
         of uetEnum:

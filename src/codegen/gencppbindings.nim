@@ -2,8 +2,8 @@ include ../nimforue/unreal/prelude
 import ../nimforue/typegen/[models, uemeta]
 import ../nimforue/macros/uebind
 
-import ../nimforue/unreal/bindings/exported/nimforuebindings
-# import ../nimforue/unreal/bindings/exported/coreuobject
+#import ../nimforue/unreal/bindings/exported/nimforuebindings
+#import ../nimforue/unreal/bindings/exported/coreuobject
 import ../nimforue/unreal/bindings/exported/slate
 
 

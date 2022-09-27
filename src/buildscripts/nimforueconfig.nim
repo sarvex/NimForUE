@@ -102,7 +102,8 @@ proc getUEHeadersIncludePaths*(conf:NimForUEConfig) : seq[string] =
     
   ]
 
-  proc getEngineRuntimeIncludePathFor(engineFolder, moduleName: string) : string = engineDir / "Source" / engineFolder / moduleName / "Public"
+  proc getEngineRuntimeIncludePathFor(engineFolder, moduleName: string) : string = engineDir / "Source" / engineFolder / moduleName
+  proc getEngineRuntimeIncludePublicPathFor(engineFolder, moduleName: string) : string = engineDir / "Source" / engineFolder / moduleName / "Public"
   proc getEngineIntermediateIncludePathFor(moduleName:string) : string = engineDir / "Intermediate/Build" / platformDir / "UnrealEditor/Inc" / moduleName
 
   let runtimeModules = @["CoreUObject", "Core", "TraceLog", "Launch", "ApplicationCore", 
@@ -121,8 +122,11 @@ proc getUEHeadersIncludePaths*(conf:NimForUEConfig) : seq[string] =
   let editorModules = @["UnrealEd", "PropertyEditor", "EditorStyle"]
   let moduleHeaders = 
     runtimeModules.map(module=>getEngineRuntimeIncludePathFor("Runtime", module)) & 
+    runtimeModules.map(module=>getEngineRuntimeIncludePublicPathFor("Runtime", module)) & 
     developerModules.map(module=>getEngineRuntimeIncludePathFor("Developer", module)) & 
+    developerModules.map(module=>getEngineRuntimeIncludePublicPathFor("Developer", module)) & 
     editorModules.map(module=>getEngineRuntimeIncludePathFor("Editor", module)) & 
+    editorModules.map(module=>getEngineRuntimeIncludePublicPathFor("Editor", module)) & 
     intermediateGenModules.map(module=>getEngineIntermediateIncludePathFor(module))
 
   (essentialHeaders & moduleHeaders & editorHeaders).map(path => path.normalizedPath().normalizePathEnd())
@@ -154,7 +158,7 @@ proc getUESymbols*(conf: NimForUEConfig): seq[string] =
 
     @[libPath, libPathEditor]
 
-  let modules = @["Core", "CoreUObject", "Engine"]
+  let modules = @["Core", "CoreUObject", "Engine", "SlateCore"]
   let engineSymbolsPaths  = modules.map(modName=>getEngineRuntimeSymbolPathFor("UnrealEditor", modName))
 
   (engineSymbolsPaths & getNimForUESymbols()).map(path => path.normalizedPath())

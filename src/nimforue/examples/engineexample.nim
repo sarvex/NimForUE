@@ -1,6 +1,6 @@
 include ../unreal/prelude
 import ../unreal/bindings/[slate,slatecore]
-
+#import ../unreal/coreuobject/coreuobject
 
 
 uClass AObjectEngineExample of AActor:
@@ -16,4 +16,4 @@ uClass AObjectEngineExample of AActor:
       let testStr = FTextBlockStyle()
       slateObj.textBlockStyle = testStr
 
-      UE_Log $slateObj.textBlockStyle 
+      UE_Log $slateObj.textBlockStyle.shadowOffset.x

@@ -6,5 +6,5 @@ import objectexample
 # import examplescratchpad
 
 import examplescodegen
-import examplecoreuobject
-import engineexample
+#import examplecoreuobject
+#import engineexample
