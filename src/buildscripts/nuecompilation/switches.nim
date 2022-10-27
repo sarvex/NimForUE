@@ -13,6 +13,8 @@ proc foldIncludes(paths: seq[string]):string =
 let ueincludes* = getUEHeadersIncludePaths(config).map(headerPath => "--t:-I" & quotes(headerPath))
 let uesymbols* = getUESymbols(config).map(symbolPath => "-l:" & quotes(symbolPath))
 
+let ueincludes* = getUEHeadersIncludePaths(config).map(headerPath => "--cincludes:" & quotes(headerPath))
+let uesymbols* = getUESymbols(config).map(symbolPath => "--clibdir:" & quotes(symbolPath))
 
 
 
