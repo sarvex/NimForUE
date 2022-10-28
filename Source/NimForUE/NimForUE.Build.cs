@@ -13,8 +13,17 @@ public class NimForUE : ModuleRules
 	
 	public NimForUE(ReadOnlyTargetRules Target) : base(Target) {
 	    PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	    CppStandard = CppStandardVersion.Cpp17;
+		if (Target.Platform == UnrealTargetPlatform.Win64){
+			CppStandard = CppStandardVersion.Cpp20;
+		} else {
+			CppStandard = CppStandardVersion.Cpp17;
+		}
+		//Console.WriteLine((Path.GetFullPath(PluginDirectory + "NimForUE\\..\\NimHeaders")));
+	    //PublicIncludePaths.Add(Path.GetFullPath(PluginDirectory + "NimForUE\\..\\NimHeaders"));
+	    PublicIncludePaths.Add("../../NimHeaders/");
+	    //PublicIncludePaths.Add("../../Intermediate\Build\Mac\x86_64\UnrealEditor\DebugGame\NimForUEBindings");
 	    PrivatePCHHeaderFile = "../../NimHeaders/UEDeps.h";
+
 	    OptimizeCode = CodeOptimization.InShippingBuildsOnly;
 		PublicIncludePaths.AddRange(   
 			new string[] {
@@ -131,6 +140,7 @@ public class NimForUE : ModuleRules
 	void BuildNim(){
 		var isWin = Target.Platform == UnrealTargetPlatform.Win64;
 		var processInfo = new ProcessStartInfo();
+		
 		processInfo.WorkingDirectory = Path.Combine(PluginDirectory, "src", "buildscripts");
 		if (isWin) {
 			processInfo.FileName = "cmd.exe";
