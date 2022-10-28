@@ -1,7 +1,7 @@
 # include nimforue/unreal/definitions
 import nimforue/[ffinimforue]
 
-import nimforue/examples/examples
+# import nimforue/examples/examples
 #import ./.reflectiondata/nimforuebindings
 
 # import nimforue/macros/[ffi, uebind]
@@ -15,3 +15,6 @@ import nimforue/examples/examples
 
 
 #echo $module
+
+
+echo "arranca"

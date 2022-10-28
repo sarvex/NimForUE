@@ -10,12 +10,8 @@ const withPCH* = false
 proc foldIncludes(paths: seq[string]):string =
     paths.foldl(a & " -I" & quotes(b), " ")
 
-let ueincludes* = getUEHeadersIncludePaths(config).map(headerPath => "--t:-I" & quotes(headerPath))
-let uesymbols* = getUESymbols(config).map(symbolPath => "-l:" & quotes(symbolPath))
-
-let ueincludes* = getUEHeadersIncludePaths(config).map(headerPath => "--cincludes:" & quotes(headerPath))
-let uesymbols* = getUESymbols(config).map(symbolPath => "--clibdir:" & quotes(symbolPath))
-
+let ueincludes* = getUEHeadersIncludePaths(config).map(headerPath => "--t:-I" & escape(quotes(headerPath)))
+let uesymbols* = getUESymbols(config).map(symbolPath => "-l:" & escape(quotes(symbolPath)))
 
 
 let buildSwitches* = @[
@@ -149,7 +145,7 @@ when defined(macosx):
 
 elif defined(windows):
   let pluginPlatformSwitches* = 
-    vccCompileFlags.mapIt("-t:" & escape(it)) & hostPlatformSwitches
+    vccCompileFlags.mapIt("-t:" & (it)) & hostPlatformSwitches
         
 
 else: discard

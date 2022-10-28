@@ -54,8 +54,6 @@ proc compilePlugin*() =
     "-d:BindingPrefix=.nimcache/gencppbindingsmacos/@m..@snimforue@sunreal@sbindings@sexported@s"
   
   let buildFlags = @[buildSwitches, targetSwitches, pluginPlatformSwitches, ueincludes, uesymbols].foldl(a & " " & b.join(" "), "")
-
-  # doAssert(execCmd(&"nim  cpp {buildFlags} --app:lib --nomain --d:genffi -d:withPCH --nimcache:.nimcache/guest src/nimforue.nim") == 0)
   doAssert(execCmd(&"nim cpp {buildFlags} {bindingPrefix} --app:lib --nomain --d:genffi -d:withPCH --nimcache:.nimcache/guest src/nimforue.nim") == 0)
   echo "NUE_TEMP"
   copyNimForUELibToUEDir()
