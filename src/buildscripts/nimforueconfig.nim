@@ -265,8 +265,20 @@ proc getUESymbols*(conf: NimForUEConfig): seq[string] =
   proc getObjFiles(dir: string, moduleName:string) : seq[string] = 
     #useful for non editor builds. Some modules are split
     # let objFiles = walkFiles(dir/ &"Module.{moduleName}*.cpp.obj").toSeq()
-    let objFiles = walkFiles(dir/ &"*.obj").toSeq()
+    when defined(windows):
+      let objFiles = walkFiles(dir / &"*.obj").toSeq()
+    else:
+      let objFiles = walkFiles(dir / &"*.o").toSeq()
     echo &"objFiles for {moduleName} in {dir}: {objFiles}"
+    
+    objFiles
+
+  proc getObjectFilesFromRootDir(dir : string) : seq[string] = 
+    when defined(windows):
+      let objFiles = walkFiles(dir / &"*.obj").toSeq()
+    else:
+      let objFiles = walkFiles(dir / "*" / &"*.o").toSeq()
+    echo &"objFiles for {dir}: {objFiles}"
     
     objFiles
 
@@ -281,8 +293,13 @@ proc getUESymbols*(conf: NimForUEConfig): seq[string] =
         getObjFiles(dir, moduleName)
        
     elif defined macosx:
-      let platform = $conf.targetPlatform #notice the platform changed for the symbols (not sure how android/consoles/ios will work)
-      @[engineDir / "Binaries" / platform / &"{prefix}-{moduleName}.dylib"]
+      if conf.withEditor:
+        let platform = $conf.targetPlatform #notice the platform changed for the symbols (not sure how android/consoles/ios will work)
+        @[engineDir / "Binaries" / platform / &"{prefix}-{moduleName}.dylib"]
+      else:
+        let dir = engineDir / "Intermediate/Build" / platformDir / unrealFolder / confDir / moduleName 
+        getObjFiles(dir, moduleName)
+      
 #E:\unreal_sources\5.1Launcher\UE_5.1\Engine\Plugins\EnhancedInput\Intermediate\Build\Win64\UnrealEditor\Development\EnhancedInput
   proc getEnginePluginSymbolsPathFor(prefix, moduleName:string): seq[string] =  
     when defined windows:
@@ -293,17 +310,26 @@ proc getUESymbols*(conf: NimForUEConfig): seq[string] =
         getObjFiles(dir, moduleName)
 
     elif defined macosx:
-      let platform = $conf.targetPlatform #notice the platform changed for the symbols (not sure how android/consoles/ios will work)
-      @[engineDir / "Plugins" / moduleName / "Binaries" / platform / &"{prefix}-{moduleName}.dylib"]
-
+      if conf.withEditor:
+        let platform = $conf.targetPlatform #notice the platform changed for the symbols (not sure how android/consoles/ios will work)
+        @[engineDir / "Plugins" / moduleName / "Binaries" / platform / &"{prefix}-{moduleName}.dylib"]
+      else:
+        let dir = engineDir / "Plugins" / moduleName / "Intermediate/Build" / platformDir / unrealFolder / confDir / moduleName 
+        getObjFiles(dir, moduleName)
 
   proc getNimForUESymbols(): seq[string] = 
     when defined macosx:
-      let libpath = pluginDir / "Binaries" / $conf.targetPlatform / "UnrealEditor-NimForUE.dylib"
-      let libpathBindings  = pluginDir / "Binaries" / $conf.targetPlatform / "UnrealEditor-NimForUEBindings.dylib"
-      #notice this shouldnt be included when target <> Editor
-      let libPathEditor  = pluginDir / "Binaries" / $conf.targetPlatform / "UnrealEditor-NimForUEEditor.dylib"
-      return @[libPath,libpathBindings, libPathEditor]
+      if conf.withEditor:
+        let libpath = pluginDir / "Binaries" / $conf.targetPlatform / "UnrealEditor-NimForUE.dylib"
+        let libpathBindings  = pluginDir / "Binaries" / $conf.targetPlatform / "UnrealEditor-NimForUEBindings.dylib"
+        #notice this shouldnt be included when target <> Editor
+        let libPathEditor  = pluginDir / "Binaries" / $conf.targetPlatform / "UnrealEditor-NimForUEEditor.dylib"
+        return @[libPath,libpathBindings, libPathEditor]
+      else:
+        let dir = pluginDir / "Intermediate/Build" / platformDir / unrealFolder / confDir 
+        let libPath = getObjFiles(dir / "NimForUE", "NimForUE")
+        let libPathBindings = getObjFiles(dir / "NimForUEBindings", "NimForUEBindings")
+        libPath & libpathBindings
 
     elif defined windows:
       if conf.withEditor:
@@ -317,9 +343,24 @@ proc getUESymbols*(conf: NimForUEConfig): seq[string] =
         let libPathBindings = getObjFiles(dir / "NimForUEBindings", "NimForUEBindings")
         libPath & libPathBindings
 
-  let modules = @["Core", "CoreUObject", "Engine", "SlateCore","Slate", "UnrealEd", "InputCore"]
-  let engineSymbolsPaths  = modules.map(modName=>getEngineRuntimeSymbolPathFor("UnrealEditor", modName)).flatten()
-  let enginePluginSymbolsPaths = @["EnhancedInput"].map(modName=>getEnginePluginSymbolsPathFor("UnrealEditor", modName)).flatten()
+  let engineObjDir = engineDir / "Intermediate/Build" / platformDir / unrealFolder / confDir  
+  let engineObjFiles = getObjectFilesFromRootDir(engineObjDir)
+  let enginePluginDir =  engineDir / "Plugins" / "*" / "Intermediate/Build" / platformDir / unrealFolder / confDir 
+  let enginePluginObjFiles = getObjectFilesFromRootDir(enginePluginDir)
+  let nimForUEobjFiles = getNimForUESymbols()
 
-  (engineSymbolsPaths & enginePluginSymbolsPaths & getNimForUESymbols()).map(path => path.normalizedPath())
+  # let ogbdLib = engineDir / "Binaries/ThirdParty/Ogg/Mac/liblogg.dylib"
+  # let vorbis = "/Volumes/Store/UnrealSources/UE_5.1/Engine/Binaries/ThirdParty/Vorbis/Mac/liblvorbis.dylib"
+
+  let ogbdLib = "-L/Volumes/Store/UnrealSources/UE_5.1/Engine/Binaries/ThirdParty/Ogg/Mac -logg"
+  let vorbis = "-L/Volumes/Store/UnrealSources/UE_5.1/Engine/Binaries/ThirdParty/Vorbis/Mac -lvorbis"
+
+  # quit()
+  (engineObjFiles & enginePluginObjFiles & nimForUEobjFiles & ogbdLib & vorbis).map(path => path.normalizedPath())
+
+  # let modules = @["Core", "CoreUObject", "Engine", "SlateCore","Slate", "UnrealEd", "InputCore"]
+  # let engineSymbolsPaths  = modules.map(modName=>getEngineRuntimeSymbolPathFor("UnrealEditor", modName)).flatten()
+  # let enginePluginSymbolsPaths = @["EnhancedInput"].map(modName=>getEnginePluginSymbolsPathFor("UnrealEditor", modName)).flatten()
+  
+  # (engineSymbolsPaths & enginePluginSymbolsPaths & getNimForUESymbols()).map(path => path.normalizedPath())
 

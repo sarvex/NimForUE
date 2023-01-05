@@ -3,5 +3,5 @@
   "gameDir": "/Volumes/Store/UnrealProjects/NimTemplate",
   "targetConfiguration": "Development",
   "targetPlatform": "Mac",
-  "withEditor": true
+  "withEditor": false
 }
