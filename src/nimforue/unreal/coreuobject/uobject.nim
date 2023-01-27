@@ -89,6 +89,8 @@ type
 
     TSubclassOf*[out T]  {. importcpp: "TSubclassOf<'0>".} = object
 
+    FVTableHelper* {.importcpp.} = object
+
 
 proc makeFImplementedInterface*(class: UClassPtr, offset:int32 = 0, implementedByK2:bool = true) : FImplementedInterface {.importcpp:"FImplementedInterface(@)", constructor.}
 
