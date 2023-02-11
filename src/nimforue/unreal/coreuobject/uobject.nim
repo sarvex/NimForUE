@@ -40,6 +40,7 @@ type
 
     #Notice this is not really the signature. It has const 
     UClassConstructor* = proc (objectInitializer:var FObjectInitializer) : void {.cdecl.}
+    VTableConstructor* = proc (helper:var FVTableHelper) : UObjectPtr  {.cdecl.}
     UClassAddReferencedObjectsType* = proc (obj:UObjectPtr, collector:var FReferenceCollector) : void {.cdecl.}
     FImplementedInterface* {.importcpp.} = object
         class* {.importcpp:"Class".}: UClassPtr
@@ -50,6 +51,7 @@ type
         classFlags* {.importcpp:"ClassFlags".}: EClassFlags
         classCastFlags* {.importcpp:"ClassCastFlags".}: EClassCastFlags
         classConstructor* {.importcpp:"ClassConstructor".}: UClassConstructor
+        classVTableHelperCtorCaller* {.importcpp:"ClassVTableHelperCtorCaller".}: VTableConstructor
         addReferencedObjects* {.importcpp:"AddReferencedObjects".}: UClassAddReferencedObjectsType
         interfaces* {.importcpp:"Interfaces".}: TArray[FImplementedInterface]
 
@@ -89,7 +91,7 @@ type
 
     TSubclassOf*[out T]  {. importcpp: "TSubclassOf<'0>".} = object
 
-    FVTableHelper* {.importcpp.} = object
+    FVTableHelper* {.importcpp, pure.} = object
 
 
 proc makeFImplementedInterface*(class: UClassPtr, offset:int32 = 0, implementedByK2:bool = true) : FImplementedInterface {.importcpp:"FImplementedInterface(@)", constructor.}
@@ -355,7 +357,18 @@ iterator items*[T](it:var TFieldIterator[T]) : var TFieldIterator[T] =
     while it.isValid():
         yield it
         it.next()
-       
+
+type FRawObjectIterator* {.importcpp.} = object
+proc makeFRawObjectIterator*() : FRawObjectIterator {. importcpp:"FRawObjectIterator()" constructor .}
+proc next*(it:var FRawObjectIterator) : void {. importcpp:"(++#)" .}
+proc isValid*(it: FRawObjectIterator): bool {.importcpp: "((bool)(#))", noSideEffect.}
+proc get*(it:FRawObjectIterator) : UObjectPtr {. importcpp:"static_cast<UObject*>(#->Object)" .}
+
+iterator items*(it:var FRawObjectIterator) : var FRawObjectIterator =
+    while it.isValid():
+        yield it
+        it.next()
+
 
 #StepExplicitProperty
 proc stepExplicitProperty*(frame:var FFrame, result:pointer, prop:FPropertyPtr) {.importcpp:"#.StepExplicitProperty(@)".}
