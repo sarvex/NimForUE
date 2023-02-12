@@ -4,7 +4,7 @@ import ../utils/ueutils
 
 import ../utils/utils
 import ../unreal/coreuobject/[uobjectflags]
-import ../codegen/[nuemacrocache, models, modulerules]
+import ../codegen/[nuemacrocache, models, modulerules, gencppclass]
 import ../../buildscripts/nimforueconfig
 import uebind
 
@@ -251,7 +251,9 @@ proc genHeaders*(moduleDef: UEModule, headersPath: string) =
 
   let classDefs = moduleDef.types
     .filterIt(it.kind == uetClass and uerCodeGenOnlyFields != getAllMatchingRulesForType(moduleDef, it))
-    .mapIt(&"class {it.name}_ : public {getParentName(it)}{{}};\n")
+    #Wonder if there is some way to automatize this, since some classes will collide some dont. Maybe traverse the headers up and store a cache?
+    .mapIt(toStr(CppClassType(name: it.name & "_", parent: getParentName(it), kind: cckClass)) & "\n")
+    # .mapIt(&"class {it.name}_ : public {getParentName(it)}{{}};\n")
     .join()
 
   func headerName (name: string): string =
