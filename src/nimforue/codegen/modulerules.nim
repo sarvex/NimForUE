@@ -5,7 +5,7 @@ import ../utils/utils
 
 const ManuallyImportedClasses* = @[ 
   #we could have this list being generated automatically by using a pragma on the imported cpp
-      "AActor", "UReflectionHelpers", "UObject",
+      "AActor", "UReflectionHelpers", "UObject", "ACharacter", "APawn",
       "UField", "UStruct", "UScriptStruct", "UPackage",
       "UClass", "UFunction", "UDelegateFunction",
       "UEnum", "AVolume", "UInterface", "USoundWaveProcedural",
@@ -20,7 +20,7 @@ const ManuallyImportedClasses* = @[
       "UInputAction",
       "UPlayerInput",
       "UEnhancedPlayerInput",
-      "APawn","UPhysicalMaterial", 
+      "UPhysicalMaterial", 
       "UTickableWorldSubsystem",
       "UGameViewportClient",
       "UNavigationSystemConfig","UNavigationSystemModuleConfig"

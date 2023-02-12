@@ -37,6 +37,8 @@ type
   APlayerControllerPtr* = ptr APlayerController
   APawn* {.importcpp, inheritable, pure .} = object of AActor
   APawnPtr* = ptr APawn
+  ACharacter* {.importcpp, inheritable, pure .} = object of APawn
+  ACharacterPtr* = ptr APawn
 
   AInfo* {.importcpp, inheritable, pure .}= object of AActor
   AInfoPtr* = ptr AInfo
